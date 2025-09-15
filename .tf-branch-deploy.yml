@@ -1,6 +1,7 @@
 default-environment: dev
 
-production-environments: dev # As we have only one env. Add more envs if required
+production-environments:
+  - dev # As we have only one env. Add more envs if required
 
 defaults:
   var-files:
