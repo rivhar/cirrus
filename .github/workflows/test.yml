@@ -26,7 +26,7 @@ jobs:
           . venv/bin/activate
           python -m pip install --upgrade pip
           pip install --upgrade pip
-          pip install -r src/layers/packages/requirements.
+          pip install -r src/layers/packages/requirements.txt
 
       - name: Run unit tests
         run: |

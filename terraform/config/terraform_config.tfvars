@@ -1,4 +1,5 @@
 env                         = "dev"
+terraform_state_bucket_name = "cirrus-tfstate-store"
 code_store_bucket           = "code-utility-store-bucket"
 cloudtrail_logs_bucket_name = "cloudtrail-logs-store-bucket"
 

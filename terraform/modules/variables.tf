@@ -3,6 +3,11 @@ variable "env" {
   type        = string
 }
 
+variable "terraform_state_bucket_name" {
+  description = "S3 backend bucket name for Terraform state."
+  type        = string
+}
+
 variable "api_gateway_name" {
   description = "The name of the API Gateway."
   type        = string

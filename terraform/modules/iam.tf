@@ -226,7 +226,13 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "dynamodb:CreateTable",
           "dynamodb:DeleteTable",
           "dynamodb:DescribeTable",
-          "dynamodb:UpdateTable"
+          "dynamodb:UpdateTable",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:ListTagsOfResource"
         ],
         "Resource" : "arn:aws:dynamodb:*:*:table/*"
       },
@@ -234,15 +240,19 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         "Sid" : "LambdaPermissions",
         "Effect" : "Allow",
         "Action" : [
+          "lambda:GetPolicy",
           "lambda:CreateFunction",
           "lambda:DeleteFunction",
           "lambda:GetFunction",
           "lambda:UpdateFunctionConfiguration",
           "lambda:AddPermission",
           "lambda:RemovePermission",
-          "lambda:UpdateFunctionCode"
+          "lambda:UpdateFunctionCode",
+          "lambda:GetLayerVersion",
+          "lambda:ListVersionsByFunction",
+          "lambda:GetFunctionCodeSigningConfig"
         ],
-        "Resource" : "arn:aws:lambda:*:*:function:*"
+        "Resource" : "*"
       },
       {
         "Sid" : "IAMPermissions",
@@ -256,9 +266,17 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "iam:DeleteRolePolicy",
           "iam:DetachRolePolicy",
           "iam:PutRolePolicy",
-          "iam:PassRole"
+          "iam:PassRole",
+          "iam:ListRolePolicies",
+          "iam:GetPolicy",
+          "iam:GetRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetPolicyVersion"
         ],
-        "Resource" : "arn:aws:iam::*:role/*"
+        "Resource" : [
+          "arn:aws:iam::*:role/*",
+          "arn:aws:iam::*:policy/*"
+        ]
       },
       {
         "Sid" : "APIGatewayPermissions",
@@ -282,7 +300,9 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "events:DeleteRule",
           "events:DescribeRule",
           "events:PutPermission",
-          "events:RemovePermission"
+          "events:RemovePermission",
+          "events:ListTagsForResource",
+          "events:ListTargetsByRule"
         ],
         "Resource" : "arn:aws:events:*:*:rule/*"
       },
@@ -293,7 +313,9 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "sns:CreateTopic",
           "sns:DeleteTopic",
           "sns:Publish",
-          "sns:SetTopicAttributes"
+          "sns:SetTopicAttributes",
+          "sns:GetTopicAttributes",
+          "sns:ListTagsForResource"
         ],
         "Resource" : "arn:aws:sns:*:*:*"
       },
@@ -302,7 +324,8 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
         "Effect" : "Allow",
         "Action" : [
           "logs:CreateLogGroup",
-          "logs:DescribeLogGroups"
+          "logs:DescribeLogGroups",
+          "logs:ListTagsForResource"
         ],
         "Resource" : "arn:aws:logs:*:*:log-group:*"
       },
@@ -319,9 +342,40 @@ resource "aws_iam_policy" "github_actions_deploy_policy" {
           "s3:PutBucketEncryption",
           "s3:PutObject",
           "s3:GetObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:GetBucketPolicy",
+          "s3:GetBucketAcl",
+          "s3:GetBucketCORS",
+          "s3:GetBucketWebsite",
+          "s3:GetBucketVersioning",
+          "s3:GetAccelerateConfiguration",
+          "s3:GetBucketRequestPayment",
+          "s3:GetBucketLogging",
+          "s3:GetLifecycleConfiguration",
+          "s3:GetReplicationConfiguration",
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetBucketTagging",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetObjectTagging",
+          "s3:GetObjectVersion"
         ],
-        "Resource" : "arn:aws:s3:::*"
+        "Resource" : [
+          "arn:aws:s3:::*",
+          "arn:aws:s3:::*/*"
+        ]
+      },
+      {
+        "Sid" : "CloudTrailPermissions",
+        "Effect" : "Allow",
+        "Action" : [
+          "cloudtrail:GetTrail",
+          "cloudtrail:DescribeTrails",
+          "cloudtrail:GetTrailStatus",
+          "cloudtrail:GetEventSelectors",
+          "cloudtrail:ListTags"
+        ],
+        "Resource" : "*"
       }
     ]
   })
