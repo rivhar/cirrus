@@ -1,4 +1,4 @@
-name: "Deploy Cirrrus with terraform-branch-deploy"
+name: "Deployment with terraform-branch-deploy"
 
 on:
   issue_comment:
