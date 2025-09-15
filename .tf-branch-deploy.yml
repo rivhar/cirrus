@@ -1,11 +1,11 @@
 default-environment: dev
 
-production-environments:
-  - prod
+production-environment:
+  - dev
 
 environments:
   dev:
-    working_directory: ./terraform/modules
+    working-directory: ./terraform/modules
     var-files:
       paths:
         - ./terraform/config/terraform_config.tfvars
