@@ -1,9 +1,8 @@
 default-environment: dev
 
-production-environment: dev # As we have only one env. Add more envs if required
+production-environments: dev # As we have only one env. Add more envs if required
 
 defaults:
-  working_directory: ./terraform/modules
   var-files:
     paths:
       - ./terraform/config/terraform_config.tfvars
