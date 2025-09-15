@@ -1,0 +1,7 @@
+default-environment: dev
+
+defaults:
+  working_directory: ./terraform/modules
+  var-files:
+    paths:
+      - ./terraform/config/terraform_config.tfvars

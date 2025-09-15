@@ -1,0 +1,91 @@
+name: "Deploy Cirrrus with terraform-branch-deploy"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  deployments: write
+  contents: write
+  checks: read
+  statuses: read
+  actions: read
+  issues: write
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Terraform branch deploy (skip mode)
+        id: tf-branch-deploy
+        uses: scarowar/terraform-branch-deploy@v0.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          skip: true
+
+      - name: Outputs from skip Mode
+        if: ${{ steps.tf-branch-deploy.outputs.skip == 'true' }}
+        run: |
+          echo "All tf-branch-deploy outputs: env='${{ steps.tf-branch-deploy.outputs.env }}', continue='${{ steps.tf-branch-deploy.outputs.continue }}', sha='${{ steps.tf-branch-deploy.outputs.sha }}', rollback='${{ steps.tf-branch-deploy.outputs.rollback }}', plan='${{ steps.tf-branch-deploy.outputs.plan }}', apply='${{ steps.tf-branch-deploy.outputs.apply }}', params='${{ steps.tf-branch-deploy.outputs.params }}', parsed_params='${{ steps.tf-branch-deploy.outputs.parsed_params }}'"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }}
+        with:
+          ref: ${{ steps.tf-branch-deploy.outputs.sha }}
+
+      - name: Set AWS Account ID and role ARN
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }}
+        id: set-aws-account
+        run: |
+          if [ ${{ steps.tf-branch-deploy.outputs.env }} == 'dev' ]; then  # As we have only one env, add more elif for other envs if required
+              ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
+          else
+              echo "Unknown environment ${{ steps.tf-branch-deploy.outputs.env }}. Exiting."
+              exit 1
+          fi
+          ROLE_NAME="github_actions_deploy_role"
+          ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE_NAME}"
+          echo "role_arn=${ROLE_ARN}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }}
+        uses: aws-actions/configure-aws-credentials@v4.2.1
+        with:
+          role-to-assume: ${{ steps.set-aws-account.outputs.role_arn }}
+          role-session-name: GithubActionsTerraform
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Make Lambda build scripts executable
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }} && ( ${{ steps.tf-branch-deploy.outputs.apply }} != 'true' )
+        run: |
+          chmod +x ./build_and_upload_lambda_layers.sh
+          chmod +x ./build_and_upload_lambda_functions.sh
+
+      - name: Build and upload Lambda layers
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }} && ( ${{ steps.tf-branch-deploy.outputs.apply }} != 'true' )
+        env:
+          ENV: ${{ steps.tf-branch-deploy.outputs.env }}
+        shell: bash
+        run: |
+          ./terraform/modules/build_and_upload_lambda_layers.sh $ENV
+
+      - name: Build and upload all Lambda functions
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }} && ( ${{ steps.tf-branch-deploy.outputs.apply }} != 'true' )
+        env:
+          ENV: ${{ steps.tf-branch-deploy.outputs.env }}
+        shell: bash
+        run: |
+          ./terraform/modules/build_and_upload_lambda_functions.sh
+
+      - name: Terraform Branch Deploy
+        if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }}
+        uses: scarowar/terraform-branch-deploy@v0.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          stable_branch: dev # Change this to your stable branch name

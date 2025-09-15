@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: Cloud Anomaly Detector API
+  description: API for managing anomaly detection rules.
+  version: "1.0"
+paths:
+  /rules:
+    get:
+      summary: Get all anomaly detection rules
+      operationId: getAllRules
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri: ${rule_management_lambda_arn}
+      responses:
+        "200":
+          description: A list of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rule"
+    post:
+      summary: Create a new anomaly detection rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewRule"
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri: ${rule_management_lambda_arn}
+      responses:
+        "201":
+          description: Rule created successfully
+  /rules/{ruleId}:
+    get:
+      summary: Get a specific rule by ID
+      operationId: getRuleById
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri: ${rule_management_lambda_arn}
+      responses:
+        "200":
+          description: Rule details
+    delete:
+      summary: Delete a specific rule by ID
+      operationId: deleteRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri: ${rule_management_lambda_arn}
+        "200":
+          description: Rule deleted successfully
+components:
+  schemas:
+    NewRule:
+      type: object
+      properties:
+        ruleName:
+          type: string
+          example: S3 CreateBucket Anomaly
+        ruleType:
+          type: string
+          example: count-based
+        metric:
+          type: string
+          example: CreateBucket
+        threshold:
+          type: integer
+          example: 0
+        timeWindow:
+          type: integer
+          example: 5
+        target:
+          type: string
+          example: arn:aws:iam::123456789012:user/Radha
+      required:
+        - ruleType
+        - metric
+        - threshold
+        - timeWindow
+        - target
+    Rule:
+      type: object
+      properties:
+        ruleId:
+          type: string
+        ruleName:
+          type: string
+        ruleType:
+          type: string
+        metric:
+          type: string
+        threshold:
+          type: integer
+        timeWindow:
+          type: integer
+        target:
+          type: string
