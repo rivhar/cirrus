@@ -1,4 +1,4 @@
-name: "Deploy with terraform-branch-deploy"
+name: "Deployment with terraform-branch-deploy"
 
 on:
   issue_comment:
@@ -25,7 +25,7 @@ jobs:
         id: tf-branch-deploy
         uses: scarowar/terraform-branch-deploy@v0.1.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           skip: true
 
       - name: Outputs from skip Mode
@@ -87,5 +87,5 @@ jobs:
         if: ${{ steps.tf-branch-deploy.outputs.continue == 'true' }}
         uses: scarowar/terraform-branch-deploy@v0.1.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           stable_branch: dev # Change this to your stable branch name
