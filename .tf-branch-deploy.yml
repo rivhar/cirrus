@@ -6,6 +6,10 @@ production-environments:
 environments:
   dev:
     working-directory: ./terraform/modules
+    backend-configs:
+      paths:
+        - ./terraform/config/terraform_backend.conf
     var-files:
       paths:
         - ./terraform/config/terraform_config.tfvars
+      
