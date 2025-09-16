@@ -1,4 +1,3 @@
-# Scheduled CloudWatch Event Rule
 resource "aws_cloudwatch_event_rule" "anomaly_detector_schedule" {
   name                = "anomaly-detector-schedule"
   description         = "Triggers the anomaly detector function based on a defined schedule."
@@ -10,7 +9,6 @@ resource "aws_cloudwatch_event_target" "detector_target" {
   arn  = aws_lambda_function.anomaly_detector.arn
 }
 
-# EventBridge rule for critical AWS actions including DynamoDB
 resource "aws_cloudwatch_event_rule" "cloudtrail_rule" {
   name        = "cloud-anomaly-rule"
   description = "Trigger for critical AWS management events"

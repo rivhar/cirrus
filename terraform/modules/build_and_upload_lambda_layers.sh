@@ -52,7 +52,6 @@ echo "[INFO] Building and uploading Lambda layers to S3 bucket: $CODE_STORE_BUCK
 # Only build the packages layer
 LAYERS=(packages)
 
-# Main Build Loop
 for LAYER in "${LAYERS[@]}"; do
   SRC_DIR="$REPO_ROOT_DIR/src/layers/$LAYER"
   if [ ! -d "$SRC_DIR" ] || [ -z "$(ls -A "$SRC_DIR")" ]; then
@@ -73,7 +72,6 @@ for LAYER in "${LAYERS[@]}"; do
   echo "[DEBUG] Pip version: $(pip --version)"
   pip install --upgrade pip
 
-  # Extra safety: ensure python/ is empty before installing
   rm -rf "$LAYER_BUILD_DIR/python"/*
   echo "[DEBUG] Installing requirement.txt to $LAYER_BUILD_DIR/python"
   if ! pip install $PIP_PARAMS -r "$LAYER_BUILD_DIR/venv/requirements.txt" -t "$LAYER_BUILD_DIR/python"; then
@@ -86,7 +84,6 @@ for LAYER in "${LAYERS[@]}"; do
   find "$LAYER_BUILD_DIR/python" | sort 
   deactivate
   rm -rf "$LAYER_BUILD_DIR/venv"
-  # Check for any resorce trees (directory with setup.py) in python/
   SRC_FILES=$(find "$LAYER_BUILD_DIR/python" -mindepth 3 -maxdepth 2 -name 'setup.py' -print0 | xargs -0r dirname)
   if [ -n "$SRC_FILES" ]; then
     echo "[ERROR] Source trees detected in layer:"
@@ -94,19 +91,16 @@ for LAYER in "${LAYERS[@]}"; do
     exit 1
   fi
 
-  # Remove unwanted files from python/ (safety)
   find "$LAYER_BUILD_DIR/python" -type d -name '__pycache__' -exec rm -rf {} +
 
-  # Set all file timestamps to fixed date for deterministic zip
   find "$LAYER_BUILD_DIR/python" -type f -print0 | xargs -0 touch -t 202401010000
 
-  # Create deterministic zip: python/ at root, sorted, no extra attrs
+  # Create deterministic zip
   (cd "$LAYER_BUILD_DIR" && find python -type f | LC_ALL=C sort | zip -X -D -@ "../${LAYER}.zip")
   ZIP_PATH="$REPO_ROOT_DIR/build/layers/${LAYER}.zip"
   echo "[DEBUF] Contents of $ZIP_PATH:"
   unzip -l "$ZIP_PATH"
 
-  #Generate SHA256 hash for Terraform source_code_hash
   openssl dgst -sha256 --binary "$ZIP_PATH" | openssl enc -base64 > "$ZIP_PATH.sha256"
   echo "[DEBUG] SHA256 hash: $(cat "$ZIP_PATH.sha256")"
 

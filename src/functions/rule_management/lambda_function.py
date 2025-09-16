@@ -5,20 +5,36 @@ import uuid
 from decimal import Decimal
 
 
-# Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
 table_name = os.environ['DYNAMODB_RULES_TABLE']
 table = dynamodb.Table(table_name)
 
 def decimal_default(obj):
+    """
+    Helper function to serialize Decimal objects to float for JSON encoding.
+    
+    DynamoDB returns numbers as Decimal objects, which are not directly
+    JSON serializable. This function converts them to floats, allowing
+    them to be included in the JSON response body.
+    """
     if isinstance(obj, Decimal):
-        # Convert Decimal to float (you could also use int if appropriate)
         return float(obj)
     raise TypeError
 
 def lambda_handler(event, context):
     """
-    Handles CRUD operations for anomaly detection rules via API Gateway.
+    Main Lambda handler for the anomaly rules API.
+
+    This function acts as a dispatcher, routing incoming API Gateway requests
+    to the appropriate function based on the HTTP method and path. It supports
+    CRUD (Create, Read, Update, Delete) operations for anomaly detection rules.
+
+    Args:
+        event (dict): The API Gateway event payload, including HTTP method, path, and body.
+        context (LambdaContext): The context object for the Lambda function.
+    
+    Returns:
+        dict: An API Gateway-compatible response dictionary with a status code and body.
     """
     http_method = event['httpMethod']
     path = event['path']
@@ -40,6 +56,20 @@ def lambda_handler(event, context):
 
 
 def validate_rule_body(body):
+    """
+    Validates the request body for creating a new rule.
+    
+    This function checks if all required fields are present and if their values
+    meet the specified criteria, such as a positive integer for 'threshold' and
+    a supported value for 'ruleType'.
+    
+    Args:
+        body (dict): The parsed JSON body of the API request.
+        
+    Returns:
+        tuple: A tuple containing a boolean (True if valid, False otherwise) and
+               a string with an error message (or None if valid).
+    """
     required_fields = ['ruleType', 'metric', 'threshold', 'timeWindow', 'target']
     missing_fields = [k for k in required_fields if k not in body]
     if missing_fields:
@@ -58,7 +88,19 @@ def validate_rule_body(body):
 
 
 def create_rule(event):
-    """Creates a new anomaly detection rule in DynamoDB."""
+    """
+    Creates a new anomaly detection rule in DynamoDB.
+    
+    This function handles POST requests to the API. It validates the request body,
+    generates a unique `ruleId`, and stores the new rule as an item in the
+    DynamoDB rules table.
+    
+    Args:
+        event (dict): The API Gateway event payload.
+        
+    Returns:
+        dict: An API Gateway-compatible response indicating success or failure.
+    """
     try:
         body = json.loads(event['body'])
         rule_id = str(uuid.uuid4())
@@ -89,6 +131,12 @@ def create_rule(event):
         }
 
 def get_all_rules():
+    """
+    Retrieves all anomaly detection rules from DynamoDB.
+    
+    This function handles GET requests to the /rules endpoint. It performs a
+    scan operation on the DynamoDB rules table and returns all items found.
+    """
     try:
         response = table.scan()
         return {
@@ -102,6 +150,12 @@ def get_all_rules():
         }
 
 def get_rule_by_id(event):
+    """
+    Retrieves a single rule by its unique ID from DynamoDB.
+    
+    This function handles GET requests to a specific rule endpoint (e.g., /rules/{ruleId}).
+    It uses a `get_item` operation with the provided `ruleId` to fetch the specific rule.
+    """
     rule_id = event['pathParameters']['ruleId']
     try:
         response = table.get_item(Key={'ruleId': rule_id})
@@ -122,7 +176,14 @@ def get_rule_by_id(event):
         }
 
 def delete_rule(event):
-    """Deletes a rule by ruleId."""
+    """
+    Deletes a rule by its unique ID from DynamoDB.
+    
+    This function handles DELETE requests to a specific rule endpoint. It attempts
+    to delete the item from the DynamoDB table using the provided `ruleId`.
+    It returns a success message if the item was deleted, or a 'not found'
+    message if the rule did not exist.
+    """
     rule_id = event['pathParameters']['ruleId']
     try:
         response = table.delete_item(

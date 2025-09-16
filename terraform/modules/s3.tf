@@ -57,14 +57,6 @@ resource "aws_s3_object" "layers_folder" {
   depends_on = [aws_s3_bucket.code_store]
 }
 
-# data "aws_s3_object" "usecase_code_folder" {
-#   for_each = toset(local.usecase_names)
-#   bucket   = aws_s3_bucket.code_store.id
-#   key      = "${each.key}_lambda_package/"
-
-#   depends_on = [aws_s3_bucket.code_store]
-# }
-
 resource "aws_s3_bucket" "cloudtrail_logs" {
   bucket = var.cloudtrail_logs_bucket_name
 

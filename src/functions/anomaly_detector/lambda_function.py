@@ -3,13 +3,9 @@ import json
 import boto3
 from datetime import datetime, timedelta
 
-# Boto3 clients and resources are initialized here.
-# You can keep these as they are.
 dynamodb = boto3.resource('dynamodb')
 sns = boto3.client('sns')
 
-# 1. Get only the SNS topic NAME from the environment variable.
-#    We are no longer expecting the full ARN.
 sns_topic_name = os.environ['SNS_TOPIC_NAME']
 
 events_table = dynamodb.Table(os.environ['DYNAMODB_EVENTS_TABLE'])
@@ -17,19 +13,27 @@ rules_table = dynamodb.Table(os.environ['DYNAMODB_RULES_TABLE'])
 
 def lambda_handler(event, context):
     """
-    Scans for anomaly rules, queries resource events, and sends alerts.
+    Main function for the Lambda handler.
+
+    This function orchestrates the anomaly detection process. It scans for active rules in the
+    'rules_table' and, for each rule, triggers a check for anomalies based on events in the
+    'events_table'. If an anomaly is detected, it publishes an alert message to an SNS topic.
+
+    Args:
+        event (dict): The event dictionary passed to the Lambda function.
+        context (LambdaContext): The context object for the Lambda function.
+
+    Returns:
+        dict: A dictionary with a status code and a body message.
     """
     print("Starting anomaly detection analysis.")
     
-    # 2. Get the AWS region and account ID dynamically from the Lambda context object.
-    #    This is a secure way to get this information at runtime.
     aws_region = context.invoked_function_arn.split(":")[3]
     aws_account_id = context.invoked_function_arn.split(":")[4]
 
-    # Pass the dynamically retrieved account ID and region to the alert function.
     send_alert_with_context = lambda msg: send_alert(msg, aws_region, aws_account_id)
 
-    # 1. Get all active rules from the DynamoDB rules table.
+    # Get all active rules from the DynamoDB rules table.
     try:
         rules_response = rules_table.scan()
         rules = rules_response['Items']
@@ -43,7 +47,7 @@ def lambda_handler(event, context):
         
     for rule in rules:
         try:
-            # 2. For each rule, query the resource events table.
+            # For each rule, query the resource events table.
             check_anomaly(rule, send_alert_with_context)
         except Exception as e:
             print(f"Error processing rule {rule.get('ruleId')}: {e}")
@@ -56,6 +60,17 @@ def lambda_handler(event, context):
 
 
 def check_anomaly(rule, send_alert_function):
+    """
+    Checks for anomalies based on a specific rule.
+
+    This function queries the 'events_table' for events matching a specific metric
+    within a defined time window. It then compares the count of these events against
+    the rule's threshold. If the count exceeds the threshold, an alert is sent.
+
+    Args:
+        rule (dict): A dictionary representing a single anomaly detection rule.
+        send_alert_function (function): A callback function to send an alert message.
+    """
     rule_id = rule['ruleId']
     rule_name = rule.get('ruleName', 'Unnamed Rule')
     rule_type = rule['ruleType']
@@ -63,7 +78,6 @@ def check_anomaly(rule, send_alert_function):
     threshold = int(rule['threshold'])
     time_window_minutes = int(rule['timeWindow'])
 
-    # Timestamp formatting (no microseconds)
     time_format = "%Y-%m-%dT%H:%M:%SZ"
     current_time = datetime.utcnow().replace(microsecond=0)
     time_cutoff = current_time - timedelta(minutes=time_window_minutes)
@@ -74,7 +88,6 @@ def check_anomaly(rule, send_alert_function):
     print(f"Querying events from {time_cutoff_str} to {current_time_str}")
 
     # Scan the events table to get all events in time window
-    # Note: We have to use scan now because partition key (userIdentity) is not known.
     response = events_table.scan(
         FilterExpression='eventTime BETWEEN :start_time AND :end_time',
         ExpressionAttributeValues={
@@ -101,9 +114,19 @@ def check_anomaly(rule, send_alert_function):
         print(f"No anomaly detected for rule {rule_name}.")
 
 def send_alert(message, region, account_id):
-    """Publishes a message to the SNS topic."""
+    """
+    Publishes a message to the specified SNS topic.
+
+    This function is responsible for sending alert messages via Amazon SNS.
+    It constructs the Topic ARN using the provided region and account ID
+    and publishes the message with a predefined subject.
+
+    Args:
+        message (str): The message body of the alert.
+        region (str): The AWS region of the SNS topic.
+        account_id (str): The AWS account ID where the SNS topic resides.
+    """
     try:
-        # 3. Construct the full ARN with the dynamic account ID and region.
         sns_topic_arn = f"arn:aws:sns:{region}:{account_id}:{sns_topic_name}"
 
         sns.publish(

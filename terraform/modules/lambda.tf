@@ -8,7 +8,6 @@ data "aws_s3_object" "data_ingestion_package_sha256" {
   key    = "data_injestion_lambda_package/data_injestion.zip.sha256"
 }
 
-# Define the Lambda function itself.
 resource "aws_lambda_function" "data_ingestion" {
   function_name    = "data_ingestion_function"
   s3_bucket        = data.aws_s3_object.data_ingestion_package.bucket
@@ -30,7 +29,6 @@ resource "aws_lambda_function" "data_ingestion" {
   layers = [
     aws_lambda_layer_version.packages_layer.arn
   ]
-  # We'll use this environment variable in our Python code to get the table name.
   environment {
     variables = var.data_injestion_environment_variables
   }
@@ -46,7 +44,6 @@ data "aws_s3_object" "rule_management_package_sha256" {
   key    = "rule_management_lambda_package/rule_management.zip.sha256"
 }
 
-# Define the Lambda function that will manage the rules.
 resource "aws_lambda_function" "rule_management" {
   function_name    = "rule_management_function"
   s3_bucket        = data.aws_s3_object.rule_management_package.bucket
@@ -86,7 +83,6 @@ data "aws_s3_object" "anomaly_detector_package_sha256" {
   key    = "anomaly_detector_lambda_package/anomaly_detector.zip.sha256"
 }
 
-# Define the Anomaly Detection Lambda function.
 resource "aws_lambda_function" "anomaly_detector" {
   function_name    = "anomaly_detector_function"
   s3_bucket        = data.aws_s3_object.anomaly_detector_package.bucket

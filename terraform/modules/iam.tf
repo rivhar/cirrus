@@ -1,4 +1,3 @@
-# Define an IAM role that our Lambda function can assume.
 resource "aws_iam_role" "data_ingestion_lambda_role" {
   name = "data-ingestion-lambda-role"
 
@@ -16,7 +15,6 @@ resource "aws_iam_role" "data_ingestion_lambda_role" {
   })
 }
 
-# Attach a policy to the role to allow writing logs to CloudWatch.
 resource "aws_iam_role_policy" "lambda_logging_policy" {
   name = "lambda-logging-policy"
   role = aws_iam_role.data_ingestion_lambda_role.id
@@ -37,7 +35,6 @@ resource "aws_iam_role_policy" "lambda_logging_policy" {
   })
 }
 
-# Attach a policy to the role to allow writing to the DynamoDB table.
 resource "aws_iam_role_policy" "lambda_dynamodb_write_policy" {
   name = "lambda-dynamodb-write-policy"
   role = aws_iam_role.data_ingestion_lambda_role.id
@@ -58,7 +55,6 @@ resource "aws_iam_role_policy" "lambda_dynamodb_write_policy" {
   })
 }
 
-# Define an IAM role for the Rule Management Lambda function.
 resource "aws_iam_role" "rule_management_lambda_role" {
   name = "rule-management-lambda-role"
 
@@ -76,7 +72,6 @@ resource "aws_iam_role" "rule_management_lambda_role" {
   })
 }
 
-# Attach a policy to allow the Lambda to write logs to CloudWatch.
 resource "aws_iam_role_policy" "rule_management_logging_policy" {
   name = "rule-management-logging-policy"
   role = aws_iam_role.rule_management_lambda_role.id
@@ -97,7 +92,6 @@ resource "aws_iam_role_policy" "rule_management_logging_policy" {
   })
 }
 
-# Attach a policy to allow CRUD operations on the anomaly_rules DynamoDB table.
 resource "aws_iam_role_policy" "rule_management_dynamodb_policy" {
   name = "rule-management-dynamodb-policy"
   role = aws_iam_role.rule_management_lambda_role.id
@@ -119,7 +113,6 @@ resource "aws_iam_role_policy" "rule_management_dynamodb_policy" {
   })
 }
 
-# Define an IAM role for the Anomaly Detection Lambda function.
 resource "aws_iam_role" "analysis_lambda_role" {
   name = "analysis-lambda-role"
   assume_role_policy = jsonencode({
@@ -136,7 +129,6 @@ resource "aws_iam_role" "analysis_lambda_role" {
   })
 }
 
-# Attach a policy to allow logging to CloudWatch.
 resource "aws_iam_role_policy" "analysis_logging_policy" {
   name = "analysis-logging-policy"
   role = aws_iam_role.analysis_lambda_role.id
@@ -152,7 +144,6 @@ resource "aws_iam_role_policy" "analysis_logging_policy" {
   })
 }
 
-# Attach a policy to allow reading from DynamoDB tables.
 resource "aws_iam_role_policy" "analysis_dynamodb_read_policy" {
   name = "analysis-dynamodb-read-policy"
   role = aws_iam_role.analysis_lambda_role.id
@@ -171,7 +162,6 @@ resource "aws_iam_role_policy" "analysis_dynamodb_read_policy" {
   })
 }
 
-# Attach a policy to allow publishing to the SNS topic.
 resource "aws_iam_role_policy" "analysis_sns_publish_policy" {
   name = "analysis-sns-publish-policy"
   role = aws_iam_role.analysis_lambda_role.id
@@ -187,8 +177,6 @@ resource "aws_iam_role_policy" "analysis_sns_publish_policy" {
   })
 }
 
-
-# Define an IAM role for GitHub Actions to assume for deployments.
 resource "aws_iam_role" "github_actions_deploy_role" {
   name = "github_actions_deploy_role"
   assume_role_policy = jsonencode({
@@ -386,7 +374,6 @@ resource "aws_iam_role_policy_attachment" "github_actions_deploy_policy_attachme
   policy_arn = aws_iam_policy.github_actions_deploy_policy.arn
 }
 
-# Grant the CloudWatch Event Rule permission to invoke our Lambda function.
 resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_data_ingestion" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
@@ -395,7 +382,6 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_data_ingestion" {
   source_arn    = aws_cloudwatch_event_rule.cloudtrail_rule.arn
 }
 
-# Grant the CloudWatch Event Rule permission to invoke the Anomaly Detector Lambda.
 resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_detector" {
   statement_id  = "AllowExecutionFromCloudWatchSchedule"
   action        = "lambda:InvokeFunction"
@@ -436,7 +422,6 @@ resource "aws_s3_bucket_policy" "cloudtrail_policy" {
   })
 }
 
-# 2. Create an IAM role for API Gateway to assume.
 resource "aws_iam_role" "api_gateway_cloudwatch_role" {
   name = "APIGatewayCloudWatchLogsRole"
 
@@ -454,7 +439,6 @@ resource "aws_iam_role" "api_gateway_cloudwatch_role" {
   })
 }
 
-# 3. Attach the managed policy for CloudWatch Logs to the IAM role.
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_logs" {
   role       = aws_iam_role.api_gateway_cloudwatch_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"

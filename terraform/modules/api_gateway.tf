@@ -1,4 +1,3 @@
-# Define the API Gateway REST API.
 resource "aws_api_gateway_rest_api" "anomaly_detector_api" {
   name        = var.api_gateway_name
   description = "API for managing anomaly detection rules."
@@ -61,7 +60,6 @@ resource "aws_api_gateway_stage" "anomaly_detectpr_api_stage" {
   rest_api_id   = aws_api_gateway_rest_api.anomaly_detector_api.id
   deployment_id = aws_api_gateway_deployment.anomaly_detector_api_deployment.id
 
-  # Enable execution logging for this stage
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_log_group.arn
     format = jsonencode({
@@ -78,19 +76,16 @@ resource "aws_api_gateway_stage" "anomaly_detectpr_api_stage" {
     })
   }
 
-  # Add an explicit dependency on the API Gateway Account settings.
   depends_on = [
     aws_api_gateway_account.account_settings
   ]
 }
 
-# Grant API Gateway permission to invoke our Lambda function.
 resource "aws_lambda_permission" "allow_api_gateway_to_invoke_rule_management" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.rule_management.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # The source ARN allows all methods and paths on the API.
   source_arn = "${aws_api_gateway_rest_api.anomaly_detector_api.execution_arn}/*/*"
 }
