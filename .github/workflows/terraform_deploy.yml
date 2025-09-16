@@ -1,4 +1,4 @@
-name: "Deployment with terraform-branch-deploy"
+name: "Deploy with terraform-branch-deploy"
 
 on:
   issue_comment:
