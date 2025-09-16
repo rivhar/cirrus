@@ -27,7 +27,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           disable_naked_commands: false
-          stable_branch: dev # Change this to your stable branch name
+          stable_branch: develop # Change this to your stable branch name
           skip: true
 
       - name: Outputs from skip Mode
@@ -91,4 +91,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           disable_naked_commands: false
-          stable_branch: dev # Change this to your stable branch name
+          stable_branch: develop # Change this to your stable branch name
